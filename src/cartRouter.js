@@ -13,7 +13,7 @@ cartRouter.get('/:cid', async (req, res) => {
     if (cart) {
       res.json({ cart });
     } else {
-      res.status(404).json({ error: 'Carrito no encontrado' });
+      res.status(404).json({ error: 'Carrito no encontrado.' });
     }
   } catch (error) {
     console.error('Error en la ruta /api/carts/:cid', error);

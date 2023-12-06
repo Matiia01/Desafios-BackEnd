@@ -26,7 +26,7 @@ app.get('/', async (req, res) => {
     res.render('index', { products });
   } catch (error) {
     console.error('Error al obtener productos:', error);
-    res.status(500).send('Error interno al obtener productos');
+    res.status(500).send('Error interno al obtener productos.');
   }
 });
 

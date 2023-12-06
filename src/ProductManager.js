@@ -18,7 +18,7 @@ class ProductManager {
   
     const products = await this.getProducts();
     if (products.some((existingProduct) => existingProduct.name === name)) {
-      console.error("Error: El nombre del producto ya existe.");
+      console.error("Error: El nombre del producto ya existe");
       return;
     }
   

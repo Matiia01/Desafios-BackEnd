@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     res.render('index', { products });
   } catch (error) {
     console.error('Error Interno del Servidor', error);
-    res.status(500).json({ error: 'Error Interno del Servidor' });
+    res.status(500).json({ error: 'Error Interno del Servidor.' });
   }
 });
 
