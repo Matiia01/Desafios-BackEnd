@@ -1,36 +1,56 @@
 const express = require('express');
-const ProductManager = require('./productManager'); 
+const exphbs = require('express-handlebars');
+const http = require('http');
+const socketIO = require('socket.io');
+const path = require('path');
+const ProductManager = require('./ProductManager'); 
+const productRouter = require('./productRouter');
 
 const app = express();
-const port = 8080;
+const server = http.createServer(app);
+const io = socketIO(server);
+app.set('socketio', io);
 
-const path = require('path');
-const productManager = new ProductManager(path.join(__dirname, 'data.json'));
 
-app.get('/products', async (req, res) => {
+const hbs = exphbs.create({});
+app.engine('handlebars', hbs.engine);
+app.set('view engine', 'handlebars');
+
+app.set('views', path.join(__dirname, 'views'));
+
+const productManager = new ProductManager(path.join(__dirname, 'src', 'productos.json'), io);
+
+app.get('/', async (req, res) => {
   try {
-    const limit = req.query.limit;
-    const products = await productManager.getProducts(limit);
-    res.json({ products });
+    const products = await productManager.getProducts();
+    res.render('index', { products });
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error al obtener productos:', error);
+    res.status(500).send('Error interno al obtener productos');
   }
 });
 
-app.get('/products/:pid', async (req, res) => {
-  try {
-    const productId = parseInt(req.params.pid);
-    const product = await productManager.getProductById(productId);
-    if (product) {
-      res.json({ product });
-    } else {
-      res.status(404).json({ error: 'Product not found' });
+
+app.get('/realtimeproducts', (req, res) => {
+  const products = productManager.getProducts();
+  res.render('realTimeProducts', { products });
+});
+
+io.on('connection', (socket) => {
+  console.log('Cliente conectado');
+  socket.on('addProduct', (product) => {
+    try {
+      io.emit('productAdded', product);
+    } catch (error) {
+      console.error('Error al emitir producto agregado:', error);
     }
-  } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+  });
 });
 
-app.listen(port, () => {
+
+app.use('/api/products', productRouter);
+
+const port = 8080;
+server.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

@@ -1,26 +1,27 @@
 const fs = require('fs').promises;
+const path = require('path');
 
 class ProductManager {
-  constructor(filePath) {
+  constructor(filePath, io) {
     this.path = filePath;
-    console.log('Ruta al archivo de productos:', this.path);
+    this.io = io;
     this.productIdCounter = 1;
   }
 
   async addProduct(product) {
     const { name, description, price, image, category, brand, weight, color } = product;
-
+  
     if (!name || !description || !price || !image || !category || !brand || !weight || !color) {
-      console.log("Error: Todos los campos son obligatorios.");
+      console.error("Error: Todos los campos son obligatorios.");
       return;
     }
-
+  
     const products = await this.getProducts();
-    if (products.some((p) => p.name === name)) {
-      console.log("Error: El nombre del producto ya existe.");
+    if (products.some((existingProduct) => existingProduct.name === name)) {
+      console.error("Error: El nombre del producto ya existe.");
       return;
     }
-
+  
     const newProduct = {
       id: this.productIdCounter++,
       name,
@@ -32,15 +33,17 @@ class ProductManager {
       weight,
       color,
     };
-
+  
     products.push(newProduct);
     await this.saveProducts(products);
     console.log("Producto agregado satisfactoriamente.");
-  }
+
+    this.io.emit('productAdded', newProduct);
+  }  
 
   async getProducts(limit) {
     try {
-      const data = await fs.readFile(this.path, 'utf8');
+      const data = await fs.readFile(path.join(__dirname, 'productos.json'), 'utf8');
       const products = JSON.parse(data);
   
       if (limit) {
@@ -92,8 +95,12 @@ class ProductManager {
   }
 
   async saveProducts(products) {
-    const data = JSON.stringify(products, null, 2);
-    await fs.writeFile(this.path, data, 'utf8');
+    try {
+      const data = JSON.stringify(products, null, 2);
+      await fs.writeFile(this.path, data, 'utf8');
+    } catch (error) {
+      console.error('Error saving products:', error);
+    }
   }
 }
 
